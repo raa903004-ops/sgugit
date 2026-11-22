@@ -9,7 +9,7 @@ on:
       - "scripts/mirror_site.py"
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -25,8 +25,21 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Download the existing deployed AutoChoice static site
+        with:
+          persist-credentials: true
+      - name: Download current AutoChoice static website
         run: python3 scripts/mirror_site.py
+      - name: Save published website files into repository
+        run: |
+          mkdir -p docs
+          cp -a site/. docs/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs
+          if ! git diff --cached --quiet; then
+            git commit -m "Update AutoChoice static website assets"
+            git push
+          fi
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload static website
